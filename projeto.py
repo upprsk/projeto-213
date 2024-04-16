@@ -72,6 +72,21 @@ def PID(kp: f64, ti: f64, td: f64):
     return cnt.parallel(h_kp, h_ki, h_kd)
 
 
+def calc_settling_time(t: NDArray[f64], y: NDArray[f64]):
+    """Segundo o criterio dos 2%"""
+    vf = y[-1]
+    yr = y[::-1]
+
+    return t[::-1][np.argmax((yr <= vf * 0.98) | (yr >= vf * 1.02))]
+
+
+def calc_response_time(t: NDArray[f64], y: NDArray[f64], theta: f64):
+    vf = y[-1]
+
+    p90_idx = np.argmax(y > vf * 0.90)
+    return t[p90_idx] - theta
+
+
 # 1. Identifique o conjunto de dados para seu grupo, nomeado por 'Dataset GrupoX'.
 dataset = loadmat("./datasets/Dataset_Grupo5.mat")
 
@@ -157,6 +172,8 @@ plt.figure()
 #    verifique o comportamento do sistema controlado. Para a Sintonia IMC, a
 #    escolha de λ é livre de acordo com o critério de desempenho.
 
+# CHR - Sem sobrevalor
+
 kp = (0.6 * tau) / (k * theta)
 ti = tau
 td = theta / 2
@@ -168,13 +185,64 @@ tc, yc = cnt.step_response(sys_pid, np.linspace(0, tempo[-1], len(tempo)))
 assert tc is not None
 assert yc is not None
 
+overshoot = (np.max(yc) - yc[-1]) / yc[-1]
+print(f"overshoot: {overshoot:.2%}")
+
+settling_time = calc_settling_time(tc, yc)
+print(f"settling time: {settling_time:.2f}s")
+
+response_time = calc_response_time(tc, yc, theta)
+print(f"response time: {response_time:.2f}s")
+
 outputc = yc * amplitude_degrau + valor_inicial
 plt.plot(tc, outputc)
 plt.legend(["response"])
 plt.grid()
-plt.title(f"PID {kp:.4f}, {ti:.4f}, {td:.4f}")
+plt.title(f"PID CHR P={kp:.4f}, I={ti:.4f}, D={td:.4f} overshoot={overshoot*100:.2f}%")
 plt.figure()
 
+# ITAE
+
+A = 0.965
+B = -0.85
+C = 0.796
+D = -0.147
+E = 0.308
+F = 0.929
+
+kp = (A / k) * (theta / tau) ** B
+ti = tau / (C + D * (theta / tau))
+td = tau * E * (theta / tau) ** F
+
+pid = PID(kp, ti, td)
+sys_pid = cnt.feedback(cnt.series(sys, pid))
+
+tc, yc = cnt.step_response(sys_pid, np.linspace(0, tempo[-1], len(tempo)))
+assert tc is not None
+assert yc is not None
+
+overshoot = (np.max(yc) - yc[-1]) / yc[-1]
+print(f"overshoot: {overshoot:.2%}")
+
+settling_time = calc_settling_time(tc, yc)
+print(f"settling time: {settling_time:.2f}s")
+
+response_time = calc_response_time(tc, yc, theta)
+print(f"response time: {response_time:.2f}s")
+
+outputc = yc * amplitude_degrau + valor_inicial
+plt.plot(tc, outputc)
+plt.legend(["response"])
+plt.grid()
+plt.title(f"PID ITAE P={kp:.4f}, I={ti:.4f}, D={td:.4f} overshoot={overshoot*100:.2f}%")
+plt.figure()
+
+# 6. De acordo com a conclusão especificada, explique, entre os sistemas
+#    controlados, qual apresenta: (a) tempo de resposta mais rápido ou (b)
+#    menores ı́ndices de overshoot.
+#
+# > Nesse caso, o ITAE possui o tempo de resposta mais rápido e também o menor
+# > índice de overshoot.
 
 # ---
 
