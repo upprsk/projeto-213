@@ -198,7 +198,10 @@ outputc = yc * amplitude_degrau + valor_inicial
 plt.plot(tc, outputc)
 plt.legend(["response"])
 plt.grid()
-plt.title(f"PID CHR P={kp:.4f}, I={ti:.4f}, D={td:.4f} overshoot={overshoot*100:.2f}%")
+plt.suptitle(f"PID CHR P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
+plt.title(
+    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+)
 plt.figure()
 
 # ITAE
@@ -234,8 +237,11 @@ outputc = yc * amplitude_degrau + valor_inicial
 plt.plot(tc, outputc)
 plt.legend(["response"])
 plt.grid()
-plt.title(f"PID ITAE P={kp:.4f}, I={ti:.4f}, D={td:.4f} overshoot={overshoot*100:.2f}%")
-plt.figure()
+plt.suptitle(f"PID ITAE P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
+plt.title(
+    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+)
+plt.show()
 
 # 6. De acordo com a conclusão especificada, explique, entre os sistemas
 #    controlados, qual apresenta: (a) tempo de resposta mais rápido ou (b)
@@ -246,4 +252,87 @@ plt.figure()
 
 # ---
 
-plt.show()
+
+def ui(kp: f64, ti: f64, td: f64) -> None:
+    from rich.console import Console
+
+    c = Console()
+
+    def get_float(prompt: str) -> f64 | None:
+        while True:
+            try:
+                return f64(input(prompt))
+            except ValueError as e:
+                c.print("error:", e)
+            except EOFError:
+                return
+
+    while True:
+        c.print(f"PID: ({kp:.4f}, {ti:.4f}, {td:.4f})")
+        c.print("tweeker:")
+        c.print("   1. Change P")
+        c.print("   2. Change I")
+        c.print("   3. Change D")
+        c.print("   4. Change Setpoint")
+        c.print("   5. Run")
+        c.print("[bright_black]Ctr+D to exit")
+
+        opt = get_float("> ")
+        if opt is None:
+            break
+
+        if opt not in (1, 2, 3, 4, 5):
+            c.print(f"[red]Invalid option: {opt}")
+            continue
+
+        if opt == 1:
+            val = get_float("P> ")
+            if val is None:
+                break
+
+            kp = val
+        elif opt == 2:
+            val = get_float("I> ")
+            if val is None:
+                break
+
+            ti = val
+        elif opt == 3:
+            val = get_float("D> ")
+            if val is None:
+                break
+
+            td = val
+        elif opt == 4:
+            c.print("[red]Not implemented: setpoint")
+        elif opt == 5:
+            pid = PID(kp, ti, td)
+            sys_pid = cnt.feedback(cnt.series(sys, pid))
+
+            tc, yc = cnt.step_response(sys_pid, np.linspace(0, tempo[-1], len(tempo)))
+            assert tc is not None
+            assert yc is not None
+
+            overshoot = (np.max(yc) - yc[-1]) / yc[-1]
+            print(f"overshoot: {overshoot:.2%}")
+
+            settling_time = calc_settling_time(tc, yc)
+            print(f"settling time: {settling_time:.2f}s")
+
+            response_time = calc_response_time(tc, yc, theta)
+            print(f"response time: {response_time:.2f}s")
+
+            outputc = yc * amplitude_degrau + valor_inicial
+            plt.plot(tc, outputc)
+            plt.legend(["response"])
+            plt.grid()
+            plt.suptitle(f"PID P={kp:.4f} I={ti:.4f} D={td:.4f}")
+            plt.title(
+                f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+            )
+            plt.show()
+
+    print()
+
+
+ui(kp, ti, td)
