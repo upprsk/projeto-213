@@ -92,6 +92,7 @@ plt.grid()
 plt.legend(["degrau", "saida"])
 plt.title("Dataset")
 plt.savefig("dataset.png")
+plt.savefig("dataset.pdf")
 plt.figure()
 
 # 2. Escolha o Método de Identificação da Planta - Smith ou Sundaresan, e
@@ -117,6 +118,7 @@ plt.legend(["output", "degrau", "saida"])
 plt.grid()
 plt.title(f"Sundaresan ({mse=})")
 plt.savefig("sundaresan.png")
+plt.savefig("sundaresan.pdf")
 plt.figure()
 
 # ---
@@ -140,6 +142,7 @@ plt.legend(["output", "degrau", "saida"])
 plt.grid()
 plt.title(f"Smith ({mse=})")
 plt.savefig("smith.png")
+plt.savefig("smith.pdf")
 plt.figure()
 
 # 3. Compare a resposta original em relação à estimada e verifique se a
@@ -163,6 +166,7 @@ plt.legend(["open", "closed"])
 plt.grid()
 plt.title("open/closed")
 plt.savefig("closed.png")
+plt.savefig("closed.pdf")
 plt.figure()
 
 # 5. Sintonize um Controlador PID de acordo com os métodos especificados e
@@ -200,6 +204,7 @@ plt.title(
     f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
 )
 plt.savefig("chr.png")
+plt.savefig("chr.pdf")
 plt.figure()
 
 # ITAE
@@ -240,6 +245,7 @@ plt.title(
     f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
 )
 plt.savefig("itae.png")
+plt.savefig("itae.pdf")
 plt.show()
 
 # 6. De acordo com a conclusão especificada, explique, entre os sistemas
