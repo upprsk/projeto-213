@@ -1,8 +1,8 @@
-from scipy.io import loadmat
-from numpy.typing import NDArray
-import numpy as np
 import control as cnt
 import matplotlib.pyplot as plt
+import numpy as np
+from numpy.typing import NDArray
+from scipy.io import loadmat
 
 f64 = np.float64
 
@@ -19,15 +19,8 @@ def sundaresan(
     valor_final: f64 = output[-1]
     k = valor_final / step
 
-    t1 = f64(0)
-    t2 = f64(0)
-    for i in range(1, len(output)):
-        if t1 == 0 and output[i] >= 0.353 * valor_final:
-            t1 = time[i]
-
-        if output[i] >= 0.853 * valor_final:
-            t2 = time[i]
-            break
+    t1 = time[output >= 0.353 * valor_final][0]
+    t2 = time[output >= 0.853 * valor_final][0]
 
     tau = 2.0 / 3 * (t2 - t1)
     theta = 1.3 * t1 - 0.29 * t2
@@ -98,6 +91,7 @@ plt.plot(tempo, degrau, tempo, saida)
 plt.grid()
 plt.legend(["degrau", "saida"])
 plt.title("Dataset")
+plt.savefig("dataset.png")
 plt.figure()
 
 # 2. Escolha o Método de Identificação da Planta - Smith ou Sundaresan, e
@@ -115,13 +109,14 @@ assert t is not None
 assert y is not None
 
 output = y * amplitude_degrau + valor_inicial
-mse = ((saida - output) ** 2).sum() / len(saida)
+mse = calc_mse(output, saida)
 print(f"mse sundaresan={mse}")
 
 plt.plot(t, output, tempo, degrau, tempo, saida)
 plt.legend(["output", "degrau", "saida"])
 plt.grid()
 plt.title(f"Sundaresan ({mse=})")
+plt.savefig("sundaresan.png")
 plt.figure()
 
 # ---
@@ -137,13 +132,14 @@ assert t is not None
 assert y is not None
 
 output = y * amplitude_degrau + valor_inicial
-mse = ((saida - output) ** 2).sum() / len(saida)
+mse = calc_mse(output, saida)
 print(f"mse smith={mse}")
 
 plt.plot(t, output, tempo, degrau, tempo, saida)
 plt.legend(["output", "degrau", "saida"])
 plt.grid()
 plt.title(f"Smith ({mse=})")
+plt.savefig("smith.png")
 plt.figure()
 
 # 3. Compare a resposta original em relação à estimada e verifique se a
@@ -166,6 +162,7 @@ plt.plot(t, output, tc, outputc)
 plt.legend(["open", "closed"])
 plt.grid()
 plt.title("open/closed")
+plt.savefig("closed.png")
 plt.figure()
 
 # 5. Sintonize um Controlador PID de acordo com os métodos especificados e
@@ -202,6 +199,7 @@ plt.suptitle(f"PID CHR P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
 plt.title(
     f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
 )
+plt.savefig("chr.png")
 plt.figure()
 
 # ITAE
@@ -241,6 +239,7 @@ plt.suptitle(f"PID ITAE P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
 plt.title(
     f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
 )
+plt.savefig("itae.png")
 plt.show()
 
 # 6. De acordo com a conclusão especificada, explique, entre os sistemas
