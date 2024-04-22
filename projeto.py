@@ -45,9 +45,9 @@ def smith(step: f64, time: NDArray[f64], output: NDArray[f64]) -> tuple[f64, f64
     return k, tau, theta
 
 
-def calc_mse(output: NDArray[f64], expected: NDArray[f64]) -> f64:
+def calc_rmse(output: NDArray[f64], expected: NDArray[f64]) -> f64:
     """Calculate mean-square-error"""
-    return ((expected - output) ** 2).sum() / len(saida)
+    return np.sqrt(((expected - output) ** 2).sum() / len(saida))
 
 
 def tf(k: f64, tau: f64, theta: f64, n_pade=20) -> cnt.TransferFunction:
@@ -93,12 +93,15 @@ plt.legend(["degrau", "saida"])
 plt.title("Dataset")
 plt.savefig("dataset.png")
 plt.savefig("dataset.pdf")
-plt.figure()
+plt.show()
 
 # 2. Escolha o Método de Identificação da Planta - Smith ou Sundaresan, e
 #    determine os valores de k, θ e τ para levantar a Função de Transferência do
 #    modelo de acordo com a resposta tı́pica. Justifique a escolha do método e do
 #    modelo.
+
+print("=== Sundaresan")
+
 amplitude_degrau: f64 = degrau[-1]
 valor_inicial: f64 = saida[0]
 k, tau, theta = sundaresan(amplitude_degrau, tempo, saida)
@@ -110,18 +113,24 @@ assert t is not None
 assert y is not None
 
 output = y * amplitude_degrau + valor_inicial
-mse = calc_mse(output, saida)
-print(f"mse sundaresan={mse}")
+rmse = calc_rmse(output, saida)
+print(f"rmse sundaresan={round(rmse, 4)}")
 
 plt.plot(t, output, tempo, degrau, tempo, saida)
 plt.legend(["output", "degrau", "saida"])
 plt.grid()
-plt.title(f"Sundaresan ({mse=})")
+plt.title(f"Sundaresan (rmse={round(rmse, 4)})")
 plt.savefig("sundaresan.png")
 plt.savefig("sundaresan.pdf")
-plt.figure()
+plt.show()
 
 # ---
+
+print()
+
+# ---
+
+print("=== Smith")
 
 amplitude_degrau: f64 = degrau[-1]
 valor_inicial: f64 = saida[0]
@@ -134,23 +143,27 @@ assert t is not None
 assert y is not None
 
 output = y * amplitude_degrau + valor_inicial
-mse = calc_mse(output, saida)
-print(f"mse smith={mse}")
+rmse = calc_rmse(output, saida)
+print(f"rmse smith={round(rmse, 4)}")
 
 plt.plot(t, output, tempo, degrau, tempo, saida)
 plt.legend(["output", "degrau", "saida"])
 plt.grid()
-plt.title(f"Smith ({mse=})")
+plt.title(f"Smith (rmse={round(rmse, 4)})")
 plt.savefig("smith.png")
 plt.savefig("smith.pdf")
-plt.figure()
+plt.show()
+
+# ---
+
+print()
 
 # 3. Compare a resposta original em relação à estimada e verifique se a
 #    aproximação foi satisfatória. Se necessário, realize o ajuste fino dos
 #    parâmetros, expondo o reflexo das alterações na resposta do sistema.
 #
 # > Será usado o método de smith, ja que visualmente aparenta ser mais próximo e
-# > também seu MSE é menor. Erro de 2.2389e-06 (smith) vs 8.35297e-05 (sundaresan).
+# > também seu rmse é menor. Erro de 2.2389e-06 (smith) vs 8.35297e-05 (sundaresan).
 
 # 4. Plote as respostas do Sistema em Malha Aberta e Fechada e comente sobre as
 #    diferenças nos valores do Erro em regime permanente e no Tempo de Acomodação;
@@ -167,13 +180,15 @@ plt.grid()
 plt.title("open/closed")
 plt.savefig("closed.png")
 plt.savefig("closed.pdf")
-plt.figure()
+plt.show()
 
 # 5. Sintonize um Controlador PID de acordo com os métodos especificados e
 #    verifique o comportamento do sistema controlado. Para a Sintonia IMC, a
 #    escolha de λ é livre de acordo com o critério de desempenho.
 
 # CHR - Sem sobrevalor
+
+print("=== CHR")
 
 kp = (0.6 * tau) / (k * theta)
 ti = tau
@@ -201,13 +216,19 @@ plt.legend(["response"])
 plt.grid()
 plt.suptitle(f"PID CHR P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
 plt.title(
-    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s rise={response_time:.2f}s"
 )
 plt.savefig("chr.png")
 plt.savefig("chr.pdf")
-plt.figure()
+plt.show()
+
+# ---
+
+print()
 
 # ITAE
+
+print("=== ITAE")
 
 A = 0.965
 B = -0.85
@@ -242,7 +263,7 @@ plt.legend(["response"])
 plt.grid()
 plt.suptitle(f"PID ITAE P={kp:.4f}, I={ti:.4f}, D={td:.4f}")
 plt.title(
-    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s rise={response_time:.2f}s"
 )
 plt.savefig("itae.png")
 plt.savefig("itae.pdf")
@@ -254,6 +275,10 @@ plt.show()
 #
 # > Nesse caso, o ITAE possui o tempo de resposta mais rápido e também o menor
 # > índice de overshoot.
+
+# ---
+
+print()
 
 # ---
 
@@ -272,13 +297,26 @@ def ui(kp: f64, ti: f64, td: f64) -> None:
             except EOFError:
                 return
 
+    def get_floatp(prompt: str) -> f64 | None:
+        while True:
+            try:
+                f = f64(input(prompt))
+                if f <= 0.0:
+                    c.print(f"error: value {f} can't be negative")
+                    continue
+                return f
+            except ValueError as e:
+                c.print("error:", e)
+            except EOFError:
+                return
+
     while True:
         c.print(f"PID: ({kp:.4f}, {ti:.4f}, {td:.4f})")
         c.print("tweeker:")
         c.print("   1. Change P")
         c.print("   2. Change I")
         c.print("   3. Change D")
-        c.print("   4. Change Setpoint")
+        # c.print("   4. Change Setpoint")
         c.print("   5. Run")
         c.print("[bright_black]Ctr+D to exit")
 
@@ -291,25 +329,23 @@ def ui(kp: f64, ti: f64, td: f64) -> None:
             continue
 
         if opt == 1:
-            val = get_float("P> ")
+            val = get_floatp("P> ")
             if val is None:
                 break
 
             kp = val
         elif opt == 2:
-            val = get_float("I> ")
+            val = get_floatp("I> ")
             if val is None:
                 break
 
             ti = val
         elif opt == 3:
-            val = get_float("D> ")
+            val = get_floatp("D> ")
             if val is None:
                 break
 
             td = val
-        elif opt == 4:
-            c.print("[red]Not implemented: setpoint")
         elif opt == 5:
             pid = PID(kp, ti, td)
             sys_pid = cnt.feedback(cnt.series(sys, pid))

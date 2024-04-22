@@ -33,7 +33,6 @@ f64 = np.float64
 
 ```python
 dataset = loadmat("./datasets/Dataset_Grupo5.mat")
-cargo install presenterm
 tempo = dataset["TARGET_DATA____ProjetoC213_Degrau"][:, 0]
 degrau = dataset["TARGET_DATA____ProjetoC213_Degrau"][:, 1]
 saida = dataset["TARGET_DATA____ProjetoC213_Saida"][:, 1]
@@ -51,12 +50,12 @@ saida = dataset["TARGET_DATA____ProjetoC213_Saida"][:, 1]
 > modelo de acordo com a resposta tı́pica. Justifique a escolha do método e do
 > modelo.
 
-Pare decidir qual possui a melhor aproximação, vai ser usado o MSE (_Mean Square Error_):
+Pare decidir qual possui a melhor aproximação, vai ser usado o RMSE (_Rising Mean Square Error_):
 
 ```python
-def calc_mse(output: NDArray[f64], expected: NDArray[f64]) -> f64:
+def calc_rmse(output: NDArray[f64], expected: NDArray[f64]) -> f64:
     """Calculate mean-square-error"""
-    return ((expected - output) ** 2).sum() / len(saida)
+    return np.sqrt(((expected - output) ** 2).sum() / len(saida))
 ```
 
 <!-- pause -->
@@ -108,7 +107,7 @@ sys = tf(k, tau, theta)
 t, y = cnt.step_response(sys, np.linspace(0, tempo[-1], len(tempo)))
 
 output = y * amplitude_degrau + valor_inicial
-mse = calc_mse(output, saida)
+mse = calc_rmse(output, saida)
 ```
 
 ![sundaresan](./sundaresan.png)
@@ -147,32 +146,20 @@ sys = tf(k, tau, theta)
 t, y = cnt.step_response(sys, np.linspace(0, tempo[-1], len(tempo)))
 
 output = y * amplitude_degrau + valor_inicial
-mse = calc_mse(output, saida)
+mse = calc_rmse(output, saida)
 ```
 
 ![smith](./smith.png)
 
 <!-- end_slide -->
 
-Resultados Sundaresan
-====
-
-- **k**: 0.9571995739643387
-- **tau**: 34.6
-- **theta**: 13.633
-- **MSE**: 8.352970008002262e-05
-
-![sundaresan](./sundaresan.png)
-
-<!-- end_slide -->
-
 Resultados Smith (🎉)
 ====
 
-- **k**: 0.9571995739643387
+- **k**: 0.9572
 - **tau**: 35.1
-- **theta**: 13.100000000000001
-- **MSE**: 2.2389243094531955e-06
+- **theta**: 13.1
+- **RMSE**: 0.0015
 
 ![smith](./smith.png)
 
@@ -186,7 +173,7 @@ Resultados Smith (🎉)
 > parâmetros, expondo o reflexo das alterações na resposta do sistema.
 
 Será usado o método de smith, ja que visualmente aparenta ser mais próximo e
-também seu MSE é menor. Erro de 2.2389e-06 (smith) vs 8.35297e-05 (sundaresan).
+também seu MSE é menor. Erro de 0.0015 (smith) vs 0.0091 (sundaresan).
 
 <!-- end_slide -->
 
@@ -199,8 +186,6 @@ também seu MSE é menor. Erro de 2.2389e-06 (smith) vs 8.35297e-05 (sundaresan)
 ```python
 sys_closed = cnt.feedback(sys)
 tc, yc = cnt.step_response(sys_closed, np.linspace(0, tempo[-1], len(tempo)))
-assert tc is not None
-assert yc is not None
 
 outputc = yc * amplitude_degrau + valor_inicial
 ```
@@ -230,8 +215,13 @@ outputc = yc * amplitude_degrau + valor_inicial
 <!-- reset_layout -->
 <!-- pause -->
 
-- CHR - Sem sobrevalor
-- ITAE
+- CHR - Sem sobrevalor: O Método CHR estabelece dois critérios de desempenho para
+  o sistema considerando o problema servo (mudança de valor do Setpoint):
+  resposta mais rápida sem overshoot ou resposta mais rápida com 20% de overshoot.
+- ITAE: O ITAE é um Índice de Desempenho baseado na minimização do erro. Um
+  Sistema com Controle ITAE reduz grandes erros iniciais, assim como erros
+  posteriores ocorridos na resposta transitória, tornando as oscilações bem
+  amortecidas e reduzindo consideravelmente o overshoot
 
 <!-- end_slide -->
 
@@ -354,7 +344,6 @@ def ui(kp: f64, ti: f64, td: f64) -> None:
         c.print("   1. Change P")
         c.print("   2. Change I")
         c.print("   3. Change D")
-        c.print("   4. Change Setpoint")
         c.print("   5. Run")
         c.print("[bright_black]Ctr+D to exit")
         ...
@@ -388,8 +377,6 @@ def ui(kp: f64, ti: f64, td: f64) -> None:
             if val is None:
                 break
 
-        elif opt == 4:
-            c.print("[red]Not implemented: setpoint")
         elif opt == 5:
             ...
 ```
