@@ -316,7 +316,6 @@ def ui(kp: f64, ti: f64, td: f64) -> None:
         c.print("   1. Change P")
         c.print("   2. Change I")
         c.print("   3. Change D")
-        # c.print("   4. Change Setpoint")
         c.print("   5. Run")
         c.print("[bright_black]Ctr+D to exit")
 

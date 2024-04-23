@@ -146,7 +146,7 @@ sys = tf(k, tau, theta)
 t, y = cnt.step_response(sys, np.linspace(0, tempo[-1], len(tempo)))
 
 output = y * amplitude_degrau + valor_inicial
-mse = calc_rmse(output, saida)
+rmse = calc_rmse(output, saida)
 ```
 
 ![smith](./smith.png)
@@ -173,7 +173,7 @@ Resultados Smith (🎉)
 > parâmetros, expondo o reflexo das alterações na resposta do sistema.
 
 Será usado o método de smith, ja que visualmente aparenta ser mais próximo e
-também seu MSE é menor. Erro de 0.0015 (smith) vs 0.0091 (sundaresan).
+também seu RMSE é menor. Erro de 0.0015 (smith) vs 0.0091 (sundaresan).
 
 <!-- end_slide -->
 
