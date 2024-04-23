@@ -406,7 +406,9 @@ plt.legend(["response"])
 plt.grid()
 plt.suptitle(f"PID P={kp:.4f} I={ti:.4f} D={td:.4f}")
 plt.title(
-    f"overshoot={overshoot*100:.2f}% settling={settling_time:.2f}s response={response_time:.2f}s"
+    f"overshoot={overshoot*100:.2f}%"
+    + "settling={settling_time:.2f}s"
+    + "response={response_time:.2f}s"
 )
 plt.show()
 ```
